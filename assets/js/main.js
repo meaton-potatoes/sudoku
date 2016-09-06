@@ -9,129 +9,149 @@ let box8 = [[6,3],[6,4],[6,5],[7,3],[7,4],[7,5],[8,3],[8,4],[8,5]];
 let box9 = [[6,6],[6,7],[6,8],[7,6],[7,7],[7,8],[8,6],[8,7],[8,8]];
 let boxes = [box1, box2, box3, box4, box5, box6, box7, box8, box9];
 
+
 $("document").ready(function(){
-  let inputs = $("input");
   let currentBoard;
 
-  function solve(){
-    while (!isSolved()) {
-      let nextMoves = findNextMoves();
-      makeNextMove(nextMoves);
+  $.ajax({
+    url: "http://www.melissaeaton.me/sudoku/assets/boards/minimums.txt",
+    success: function(response){
+      console.log(response);
     }
-  }
-
-  function findNextMoves(){
-    let nextMoves = []
-    for (let x = 0; x < currentBoard.length; x++) {
-      let row = []
-      for (let y = 0; y < currentBoard[x].length; y++) {
-        if (currentBoard[x][y] === 0) {
-          let collisions = rowColumnCollisions([x, y]).concat(boxCollisions([x, y]));
-          let nonCollisions = [1,2,3,4,5,6,7,8,9].filter(function(value){if (!collisions.includes(value)){return value}});
-          row.push(nonCollisions);
-        } else {
-          row.push([]);
-        }
-      }
-      nextMoves.push(row);
-    }
-    return nextMoves;
-  }
-
-  function makeNextMove(nextMoves){
-    for (let x = 0; x < nextMoves.length; x++) {
-      for (let y = 0; y < nextMoves[x].length; y++) {
-        if (nextMoves[x][y].length !== 0) {
-          $(`input[data-pos='${[x,y]}']`).val(nextMoves[x][y]);
-          if (nextMoves[x][y].length === 1) {
-            currentBoard[x][y] = nextMoves[x][y][0];
-            $(`input[data-pos='${[x,y]}']`).val(currentBoard[x][y]);
-          }
-        }
-      }
-    }
-  }
-
-  function isSolved(){
-    for (let x = 0; x < currentBoard.length; x++) {
-      for (let y = 0; y < currentBoard[x].length; y++) {
-        if (currentBoard[x][y] === 0) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  function deleteFromArray(array, element){
-    let index = array.indexOf(element);
-    if (index === 0) {
-      array.shift()
-    } else if (index === array.length - 1) {
-      array.pop();
-    } else {
-      array = array.slice(0, index).concat(array.slice(index + 1, array.length));
-    }
-    return array;
-  }
-
-  function rowColumnCollisions(pos) {
-    let collisions = [];
-    for (let i = 0; i < 9; i++) {
-      if (currentBoard[pos[0]][i] !== 0) {
-        collisions.push(currentBoard[pos[0]][i]);
-      }
-      if (currentBoard[i][pos[1]] !== 0) {
-        collisions.push(currentBoard[i][pos[1]]);
-      }
-    }
-    return collisions;
-  }
-
-  function boxCollisions(pos) {
-    let collisions = [];
-    let box = [];
-    boxes.forEach(function(boxPos){
-      boxPos.forEach(function(pos1){
-        if (pos1[0] === pos[0] && pos1[1] === pos[1]) {
-          box = boxPos;
-        }
-      });
-    });
-    box.forEach(function(pos){
-      if (currentBoard[pos[0]][pos[1]] !== 0) {
-        collisions.push(currentBoard[pos[0]][pos[1]])
-      }
-    });
-    return collisions;
-  }
-
-  function levelSelect(){
-    let difficulty = $("#level").val();
-    if (difficulty === "hard") {
-      let puzzle = readPuzzle(given);
-      displayPuzzle(puzzle);
-    }
-  }
-
-  function readPuzzle(str){
-    let formattedPuzzle = [];
-    for (let i = 0; i < str.length; i += 9) {
-      formattedPuzzle.push(str.slice(i, i + 9).split("").map(function(char){return parseInt(char)}));
-    }
-    return formattedPuzzle;
-  }
-
-  function displayPuzzle(puzzle){
-    currentBoard = puzzle;
-    $.each(inputs, function(i, input){
-      let pos = $(input).data("pos").split(",").map(function(num){return parseInt(num)});
-      if (puzzle[pos[0]][pos[1]] !== 0) {
-        $(input).val(puzzle[pos[0]][pos[1]]);
-        $(input).prop("disabled", true);
-        $(input).css("background-color", "rgba(255, 255, 255, .5)")
-      }
-    });
-  }
-
+  });
 });
+
+function defaultPuzzle(){
+  let inputs = $("input");
+  let given = "003020600900305001001806400008102900700000008006708200002609500800203009005010300";
+  let puzzle = readPuzzle(given);
+  displayPuzzle(inputs, puzzle)
+}
+
+function solve(){
+  while (!isSolved()) {
+    let nextMoves = findNextMoves();
+    makeNextMove(nextMoves);
+  }
+}
+
+function findNextMoves(){
+  let nextMoves = []
+  for (let x = 0; x < currentBoard.length; x++) {
+    let row = []
+    for (let y = 0; y < currentBoard[x].length; y++) {
+      if (currentBoard[x][y] === 0) {
+        let collisions = rowColumnCollisions([x, y]).concat(boxCollisions([x, y]));
+        let nonCollisions = [1,2,3,4,5,6,7,8,9].filter(function(value){if (!collisions.includes(value)){return value}});
+        row.push(nonCollisions);
+      } else {
+        row.push([]);
+      }
+    }
+    nextMoves.push(row);
+  }
+  return nextMoves;
+}
+
+function makeNextMove(nextMoves){
+  for (let x = 0; x < nextMoves.length; x++) {
+    for (let y = 0; y < nextMoves[x].length; y++) {
+      if (nextMoves[x][y].length !== 0) {
+        $(`input[data-pos='${[x,y]}']`).val(nextMoves[x][y]);
+        if (nextMoves[x][y].length === 1) {
+          currentBoard[x][y] = nextMoves[x][y][0];
+          $(`input[data-pos='${[x,y]}']`).val(currentBoard[x][y]);
+        }
+      }
+    }
+  }
+}
+
+function isSolved(){
+  for (let x = 0; x < currentBoard.length; x++) {
+    for (let y = 0; y < currentBoard[x].length; y++) {
+      if (currentBoard[x][y] === 0) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function deleteFromArray(array, element){
+  let index = array.indexOf(element);
+  if (index === 0) {
+    array.shift()
+  } else if (index === array.length - 1) {
+    array.pop();
+  } else {
+    array = array.slice(0, index).concat(array.slice(index + 1, array.length));
+  }
+  return array;
+}
+
+function rowColumnCollisions(pos) {
+  let collisions = [];
+  for (let i = 0; i < 9; i++) {
+    if (currentBoard[pos[0]][i] !== 0) {
+      collisions.push(currentBoard[pos[0]][i]);
+    }
+    if (currentBoard[i][pos[1]] !== 0) {
+      collisions.push(currentBoard[i][pos[1]]);
+    }
+  }
+  return collisions;
+}
+
+function boxCollisions(pos) {
+  let collisions = [];
+  let box = [];
+  boxes.forEach(function(boxPos){
+    boxPos.forEach(function(pos1){
+      if (pos1[0] === pos[0] && pos1[1] === pos[1]) {
+        box = boxPos;
+      }
+    });
+  });
+  box.forEach(function(pos){
+    if (currentBoard[pos[0]][pos[1]] !== 0) {
+      collisions.push(currentBoard[pos[0]][pos[1]])
+    }
+  });
+  return collisions;
+}
+
+function levelSelect(){
+  let difficulty = $("#level").val();
+  if (difficulty === "hard") {
+    let puzzle = readPuzzle(given);
+    displayPuzzle(puzzle);
+  } else if (difficulty === "easy") {
+    let puzzle = readPuzzle(easyPuzzles[Math.random(easyPuzzles.length)]);
+    displayPuzzle(puzzle)
+  }
+}
+
+function readPuzzle(str){
+  let formattedPuzzle = [];
+  for (let i = 0; i < str.length; i += 9) {
+    formattedPuzzle.push(str.slice(i, i + 9).split("").map(function(char){return parseInt(char)}));
+  }
+  return formattedPuzzle;
+}
+
+function displayPuzzle(inputs, puzzle){
+  currentBoard = puzzle;
+  $.each(inputs, function(i, input){
+    let pos = $(input).data("pos").split(",").map(function(num){return parseInt(num)});
+    if (puzzle[pos[0]][pos[1]] !== 0) {
+      $(input).val(puzzle[pos[0]][pos[1]]);
+      $(input).prop("disabled", true);
+      $(input).css("background-color", "rgba(255, 255, 255, .5)")
+    }
+  });
+}
+
+function bruteForce(){
+
+}

@@ -38,11 +38,13 @@ h1 {
 .square {
   /*background-color: rgba(255,255,255,.5);*/
   border: 1px solid #fff;
+  border-radius: 4px;
   height: 50px;
   width: 50px;
 }
 
 .square input {
+  border-radius: 4px;
   padding: 0;
   margin: 0;
   height: 100%;
@@ -52,4 +54,20 @@ h1 {
   color: #fff;
   font-size: 30px;
   text-align: center;
+}
+
+button {
+  padding: 10px;
+  margin: 10px;
+  border-radius: 4px;
+  background-color: rgba(255,255,255,.9);
+  font-size: 20px;
+  border: none;
+  color: mediumpurple;
+}
+
+button:hover {
+  cursor: pointer;
+  background-color: mediumpurple;
+  color: #fff;
 }
