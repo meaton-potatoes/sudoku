@@ -15,6 +15,7 @@ $("document").ready(function(){
 
   $.ajax({
     url: "http://www.melissaeaton.me/sudoku/assets/boards/minimums.txt",
+    type: "text",
     success: function(response){
       console.log(response);
     }
