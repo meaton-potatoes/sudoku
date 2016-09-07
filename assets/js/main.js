@@ -62,7 +62,6 @@ const easyPuzzles = [
   "300200000000107000706030500070009080900020004010800050009040301000702000000008006"
 ];
 
-
 $("document").ready(function(){
   let currentBoard;
   let puzzle = readPuzzle(easyPuzzles[Math.floor(Math.random() * easyPuzzles.length)]);
@@ -206,14 +205,15 @@ function resetSquare(input){
 
 function bruteForce(board){
   if (isSolved(board)){
-    makeAllMoves(board);
-    return;
+    return board;
   }
   let nextMoves = findNextMoves(board)
   let singles = singleMoves(nextMoves, board);
   while (singles.length > 0) {
+    // console.log(singles);
     singles.forEach(function(move){
       board[move["x"]][move["y"]] = move["value"];
+      $(`input[data-pos='${[move["x"], move["y"]]}']`).val(board[move["x"]][move["y"]]);
     });
     nextMoves = findNextMoves(board);
     if (anyEmptySquareHasNoPossibilities(nextMoves, board)){
@@ -221,19 +221,18 @@ function bruteForce(board){
     }
     singles = singleMoves(nextMoves, board)
   }
-  // console.log(nextMoves);
-  for (let x = 0; x < nextMoves.length; x++) {
-    for (let y = 0; y < nextMoves[x].length; y++) {
-      for (let i = 0; i < nextMoves[x][y].length; i++) {
-        let nextBoard = board.slice()
-        nextBoard[x][y] = nextMoves[x][y][i]
-        let next = bruteForce(nextBoard);
-        if (next) {
-          return next;
-        }
-      }
-    }
-  }
+  // for (let x = 0; x < nextMoves.length; x++) {
+  //   for (let y = 0; y < nextMoves[x].length; y++) {
+  //     for (let i = 0; i < nextMoves[x][y].length; i++) {
+  //       let nextBoard = board.slice()
+  //       nextBoard[x][y] = nextMoves[x][y][i]
+  //       let next = bruteForce(nextBoard);
+  //       if (next) {
+  //         return makeAllMoves(next);
+  //       }
+  //     }
+  //   }
+  // }
 }
 
 function anyEmptySquareHasNoPossibilities(nextMoves, board){
@@ -271,7 +270,6 @@ function singleMoves(nextMoves, board) {
       }
     }
   }
-  console.log(singles);
   return singles;
 }
 
