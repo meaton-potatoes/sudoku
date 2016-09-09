@@ -1,14 +1,3 @@
-let box1 = [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]];
-let box2 = [[0,3],[0,4],[0,5],[1,3],[1,4],[1,5],[2,3],[2,4],[2,5]];
-let box3 = [[0,6],[0,7],[0,8],[1,6],[1,7],[1,8],[2,6],[2,7],[2,8]];
-let box4 = [[3,0],[3,1],[3,2],[4,0],[4,1],[4,2],[5,0],[5,1],[5,2]];
-let box5 = [[3,3],[3,4],[3,5],[4,3],[4,4],[4,5],[5,3],[5,4],[5,5]];
-let box6 = [[3,6],[3,7],[3,8],[4,6],[4,7],[4,8],[5,6],[5,7],[5,8]];
-let box7 = [[6,0],[6,1],[6,2],[7,0],[7,1],[7,2],[8,0],[8,1],[8,2]];
-let box8 = [[6,3],[6,4],[6,5],[7,3],[7,4],[7,5],[8,3],[8,4],[8,5]];
-let box9 = [[6,6],[6,7],[6,8],[7,6],[7,7],[7,8],[8,6],[8,7],[8,8]];
-let boxes = [box1, box2, box3, box4, box5, box6, box7, box8, box9];
-
 const easyPuzzles = [
   "003020600900305001001806400008102900700000008006708200002609500800203009005010300",
   "200080300060070084030500209000105408000000000402706000301007040720040060004010003",
@@ -62,262 +51,242 @@ const easyPuzzles = [
   "300200000000107000706030500070009080900020004010800050009040301000702000000008006"
 ];
 
-$("document").ready(function(){
-  let currentBoard;
-  let puzzle = readPuzzle(easyPuzzles[Math.floor(Math.random() * easyPuzzles.length)]);
-  displayPuzzle(puzzle)
-});
+class Sudoku {
 
-function solve(){
-  bruteForce(currentBoard);
-  // while (!isSolved()) {
-  //   let nextMoves = findNextMoves(currentBoard);
-  //   makeNextMove(nextMoves);
-  // }
-}
-
-function findNextMoves(board){
-  let nextMoves = []
-  for (let x = 0; x < board.length; x++) {
-    let row = []
-    for (let y = 0; y < board[x].length; y++) {
-      if (board[x][y] === 0) {
-        let collisions = rowColumnCollisions([x, y], board).concat(boxCollisions([x, y], board));
-        let nonCollisions = [1,2,3,4,5,6,7,8,9].filter(function(value){if (!collisions.includes(value)){return value}});
-        row.push(nonCollisions);
-      } else {
-        row.push([]);
-      }
-    }
-    nextMoves.push(row);
+  constructor(){
+    this.currentBoard;
   }
-  return nextMoves;
-}
 
-function makeNextMove(nextMoves, board){
-  for (let x = 0; x < nextMoves.length; x++) {
-    for (let y = 0; y < nextMoves[x].length; y++) {
-      if (nextMoves[x][y].length !== 0) {
-        $(`input[data-pos='${[x,y]}']`).val(nextMoves[x][y]);
-        if (nextMoves[x][y].length === 1) {
-          board[x][y] = nextMoves[x][y][0];
-          $(`input[data-pos='${[x,y]}']`).val(board[x][y]);
+  load(){
+    this.displayPuzzle("904200007010000000000706500000800090020904060040002000001607000000000030300005702");
+  }
+
+  solve(){
+    console.log("here");
+  }
+
+  rowColumnNonCollisions(pos, board){
+    if (board[pos[0]][pos[1]] === 0) {
+      const rowCollisions = [0, 1, 2, 3, 4, 5, 6, 7, 8].map(y => board[pos[0]][y]).filter(val => val !== 0);
+      const columnCollisions = [0, 1, 2, 3, 4, 5, 6, 7, 8].map(x => board[x][pos[1]]).filter(val => val !== 0);
+      let nonCollisions = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+      rowCollisions.concat(columnCollisions).forEach(collision => {
+        nonCollisions = nonCollisions.filter(val => val !== collision)
+      });
+      return nonCollisions
+    } else {
+      return [];
+    }
+  }
+
+  boxNonCollisions(pos, board){
+    if (board[pos[0]][pos[1]] === 0) {
+      let xBox = Math.floor(pos[0] / 3);
+      let yBox = Math.floor(pos[1] / 3);
+      let nonCollisions = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+      for (let x = 0; x < board.length; x++) {
+        if (Math.floor(x / 3) === xBox) {
+          for (let y = 0; y < board[x].length; y++) {
+            if (Math.floor(y / 3) === yBox) {
+              nonCollisions = nonCollisions.filter(val => val !== board[x][y]);
+            }
+          }
         }
       }
+      return nonCollisions;
+    } else {
+      return [];
     }
   }
-}
 
-function isSolved(board){
-  for (let x = 0; x < board.length; x++) {
-    for (let y = 0; y < board[x].length; y++) {
-      if (board[x][y] === 0) {
-        return false;
+  squarePossibleMoves(pos, board) {
+    let rowColumnNonCollisions = this.rowColumnNonCollisions(pos, board);
+    let boxNonCollisions = this.boxNonCollisions(pos, board);
+    rowColumnNonCollisions = rowColumnNonCollisions.filter(val => boxNonCollisions.includes(val));
+    boxNonCollisions = boxNonCollisions.filter(val => rowColumnNonCollisions.includes(val));
+    let nonCollisions = rowColumnNonCollisions.concat(boxNonCollisions);
+    return $.unique(nonCollisions);
+  }
+
+  allPossibleMoves(board) {
+    let allPossibilities = [];
+    for (let x = 0; x < board.length; x++) {
+      let row = [];
+      for (let y = 0; y < board[x].length; y++) {
+        if (board[x][y] === 0) {
+          row.push(this.squarePossibleMoves([x,y], board));
+        } else {
+          row.push([]);
+        }
       }
+      allPossibilities.push(row);
     }
+    return allPossibilities;
   }
-  return true;
-}
 
-function deleteFromArray(array, element){
-  let index = array.indexOf(element);
-  if (index === 0) {
-    array.shift()
-  } else if (index === array.length - 1) {
-    array.pop();
-  } else {
-    array = array.slice(0, index).concat(array.slice(index + 1, array.length));
-  }
-  return array;
-}
-
-function rowColumnCollisions(pos, board) {
-  let collisions = [];
-  for (let i = 0; i < 9; i++) {
-    if (board[pos[0]][i] !== 0) {
-      collisions.push(board[pos[0]][i]);
+  levelSelect(){
+    let puzzle;
+    switch ($("#level").val()) {
+      case "easy":
+        puzzle = readPuzzle(easyPuzzles[Math.floor(Math.random() * easyPuzzles.length)]);
+        break;
+      case "medium":
+        puzzle = readPuzzle(given);
+        break;
+      case "hard":
+        break;
     }
-    if (board[i][pos[1]] !== 0) {
-      collisions.push(board[i][pos[1]]);
-    }
-  }
-  return collisions;
-}
-
-function boxCollisions(pos, board) {
-  let collisions = [];
-  let box = [];
-  boxes.forEach(function(boxPos){
-    boxPos.forEach(function(pos1){
-      if (pos1[0] === pos[0] && pos1[1] === pos[1]) {
-        box = boxPos;
-      }
-    });
-  });
-  box.forEach(function(pos){
-    if (board[pos[0]][pos[1]] !== 0) {
-      collisions.push(board[pos[0]][pos[1]])
-    }
-  });
-  return collisions;
-}
-
-function levelSelect(){
-  let difficulty = $("#level").val();
-  if (difficulty === "easy") {
-    let puzzle = readPuzzle(easyPuzzles[Math.floor(Math.random() * easyPuzzles.length)]);
     displayPuzzle(puzzle)
-  } else if (difficulty === "medium") {
-    let puzzle = readPuzzle(given);
-    displayPuzzle(puzzle);
-  } else {
-
   }
-}
 
-function readPuzzle(str){
-  let formattedPuzzle = [];
-  for (let i = 0; i < str.length; i += 9) {
-    formattedPuzzle.push(str.slice(i, i + 9).split("").map(function(char){return parseInt(char)}));
-  }
-  return formattedPuzzle;
-}
-
-function displayPuzzle(puzzle){
-  let inputs = $("input");
-  currentBoard = puzzle;
-  $.each(inputs, function(i, input){
-    resetSquare(input);
-    let pos = $(input).data("pos").split(",").map(function(num){return parseInt(num)});
-    if (puzzle[pos[0]][pos[1]] !== 0) {
-      $(input).val(puzzle[pos[0]][pos[1]]);
-      $(input).prop("disabled", true);
-      $(input).css("background-color", "rgba(255, 255, 255, .5)")
-    }
-  });
-}
-
-function reset(){
-  let inputs = $("input");
-  $.each(inputs, function(i, input){
-    resetSquare(input);
-  });
-}
-
-function lock(){
-  currentBoard = [[0,0,0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0,0,0]];
-  let inputs = $("input");
-  $.each(inputs, function(i, input){
-    let inputValue = parseInt($(input).val());
-    if (!isNaN(inputValue)) {
-      let pos = $(input).data("pos").split(",").map(function(num){return parseInt(num)});
-      currentBoard[pos[0]][pos[1]] = inputValue;
-    }
-  });
-  displayPuzzle(currentBoard)
-}
-
-function resetSquare(input){
-  $(input).val("")
-  $(input).prop("disabled", false);
-  $(input).css("background-color", "transparent")
-}
-
-function bruteForce(board){
-  if (isSolved(board)){
-    makeAllMoves(board)
-    return true;
-  }
-  let nextMoves = findNextMoves(board)
-  let singles = singleMoves(nextMoves, board);
-  while (singles.length > 0) {
-    singles.forEach(function(move){
-      board[move["x"]][move["y"]] = move["value"];
+  reset(){
+    $.each($("input"), (i, input) => {
+      this.resetSquare(input);
     });
-    nextMoves = findNextMoves(board);
-    singles = singleMoves(nextMoves, board)
   }
-  if (anyEmptySquareHasNoPossibilities(nextMoves, board)){
-    return false;
+
+  resetSquare(input){
+    $(input).val("").prop("disabled", false).css("background-color", "transparent");
   }
-  for (let x = 0; x < board.length; x++) {
-    for (let y = 0; y < board[x].length; y++) {
-      for (let i = 0; i < nextMoves[x][y].length; i++) {
-        let potentialBoard = boardCopy(board);
-        potentialBoard[x][y] = nextMoves[x][y][i];
-        let next = bruteForce(potentialBoard);
-        if (next === true) {
-          return next;
+
+  readPuzzle(str){
+    let puzzle = [];
+    str.match(/.{1,9}/g).forEach(rowStr => {
+      puzzle.push(rowStr.split("").map(letter => parseInt(letter)))
+    });
+    return puzzle;
+  }
+
+  lock(){
+    for (let x = 0; x < this.currentBoard.length; x++) {
+      let row = [];
+      for (let y = 0; y < this.currentBoard[x].length; y++) {
+        let inputValue = parseInt(this.input([x, y]).val());
+        if ([1,2,3,4,5,6,7,8,9].includes(inputValue)) {
+          this.currentBoard[x][y] = inputValue;
+        } else {
+          this.currentBoard[x][y] = 0;
         }
       }
     }
+    this.displayPuzzle(this.currentBoard)
   }
-}
 
-function anyEmptySquareHasNoPossibilities(nextMoves, board){
-  for (let x = 0; x < board.length; x++) {
-    for (let y = 0; y < board[x].length; y++) {
-      if (board[x][y] === 0) {
-        if (nextMoves[x][y].length === 0) {
+  input(pos){
+    return $(`input[data-pos='${[pos[0],pos[1]]}']`);
+  }
+
+  displayPuzzle(puzzle){
+    console.log(puzzle);
+    if (typeof puzzle === "string") {
+      this.currentBoard = this.readPuzzle(puzzle);
+    } else if (typeof puzzle === "object") {
+      this.currentBoard = puzzle;
+    }
+    this.reset();
+    this.currentBoard.forEach((row, x) => {
+      row.forEach((pos, y) => {
+        if (pos > 0) {
+          this.input([x, y]).val(pos).prop("disabled", true).css("background-color", "rgba(255, 255, 255, .5)");
+        }
+      });
+    });
+  }
+
+  isUnsolvable(board){
+    let allPossibilities = this.allPossibleMoves(board);
+    // console.log(allPossibilities);
+    for (let x = 0; x < allPossibilities.length; x++) {
+      for (let y = 0; y < allPossibilities[x].length; y++) {
+        if (board[x][y] === 0 && allPossibilities[x][y].length === 0){
           return true;
         }
       }
     }
+    return false;
   }
-  return false;
-}
 
-function thereAreSingleMoves(nextMoves){
-  for (let x = 0; x < nextMoves.length; x++) {
-    for (let y = 0; y < nextMoves[x].length; y++) {
-      if (nextMoves[x][y].length === 1) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-function singleMoves(nextMoves, board) {
-  singles = [];
-  for (let x = 0; x < board.length; x++) {
-    for (let y = 0; y < board[x].length; y++) {
-      if (board[x][y] === 0) {
-        if (nextMoves[x][y].length === 1) {
-          singles.push({x: x, y: y, value: nextMoves[x][y][0]});
+  isSolved(board){
+    for (let x = 0; x < board.length; x++) {
+      for (let y = 0; y < board[x].length; y++) {
+        if (board[x][y] === 0) {
+          return false;
         }
       }
     }
+    return true;
   }
-  return singles;
-}
 
-function makeAllMoves(board){
-  for (let x = 0; x < board.length; x++) {
-    for (let y = 0; y < board[x].length; y++) {
-      if (board[x][y] !== 0) {
-        $(`input[data-pos='${[x,y]}']`).val(board[x][y]);
+  solve(board = this.currentBoard){
+    board = this.copyBoard(board)
+    if (this.isSolved(board)){
+      console.log(false);
+      return false;
+    }
+    let allPossibilities = this.allPossibleMoves(board);
+    for (let x = 0; x < board.length; x++){
+      for (let y = 0; y < board[x].length; y++) {
+        if (board[x][y] === 0) {
+          for (let i = 0; i < allPossibilities[x][y].length; i++) {
+            console.log(board);
+            board[x][y] = allPossibilities[x][y][i];
+            let next = this.solve(board);
+            if (next) {
+              return next;
+            } else {
+              continue;
+            }
+          }
+        }
       }
     }
+    this.displayPuzzle(board);
+    console.log(true);
+    return true;
   }
+
+  copyBoard(board){
+    let boardCopy = [];
+    for (let x = 0; x < board.length; x++) {
+      let row = [];
+      for (let y = 0; y < board[x].length; y++) {
+        row.push(board[x][y]);
+      }
+      boardCopy.push(row);
+    }
+    return boardCopy;
+  }
+
+  singleMoves(allPossibilities, board){
+    let singles = [];
+    for (let x = 0; x < allPossibilities.length; x++) {
+      for (let y = 0; y < allPossibilities[x].length; y++) {
+        if (board[x][y] === 0 && allPossibilities[x][y].length === 1) {
+          singles.push({x: x, y: y, value: allPossibilities[x][y][0]});
+        }
+      }
+    }
+    console.log(singles);
+    return singles;
+  }
+
 }
 
-function boardCopy(board){
-  let newBoard = [];
-  for (let x = 0; x < board.length; x++) {
-    let row = [];
-    for (let y = 0; y < board[x].length; y++) {
-      row.push(board[x][y]);
-    }
-    newBoard.push(row);
-  }
-  return newBoard;
+let sudoku = new Sudoku();
+window.sudoku = sudoku;
+
+$(document).ready(()=>{
+  sudoku.load();
+});
+
+function solve(){
+  sudoku.solve();
+}
+
+function lock(){
+  sudoku.lock();
+}
+
+function reset(){
+  sudoku.reset();
 }
